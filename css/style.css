@@ -61,6 +61,12 @@ html, body {
 }
 .btn.primary:hover:not(:disabled) { background: #A0522D; }
 .btn.small { padding: 6px 12px; font-size: 14px; }
+.btn.danger {
+  background: #8b0000;
+  border-color: #ff4444;
+  color: #fff;
+}
+.btn.danger:hover:not(:disabled) { background: #a00000; }
 
 /* Title Screen */
 .title-card {

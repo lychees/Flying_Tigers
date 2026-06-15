@@ -80,6 +80,7 @@ function init() {
   document.getElementById('btn-prep-briefing').addEventListener('click', () => switchPrepTab('briefing'));
   document.getElementById('btn-end-turn').addEventListener('click', endPlayerTurn);
   document.getElementById('btn-menu').addEventListener('click', openMenu);
+  document.getElementById('btn-auto-win').addEventListener('click', autoWinMission);
   document.getElementById('btn-restart').addEventListener('click', startGame);
   document.getElementById('btn-back-title').addEventListener('click', showTitle);
   document.getElementById('btn-save').addEventListener('click', saveGame);
@@ -394,6 +395,19 @@ function startCurrentMission() {
 
 function getObjectiveText(obj) {
   return { defeat_all: '全灭敌机', protect: '保护目标', defeat_bombers: '击落轰炸机', destroy_targets: '摧毁地面目标' }[obj];
+}
+
+function autoWinMission() {
+  if (game.state !== 'mission') return;
+  addMessage('☆ 自动过关：敌方全部清除');
+  for (const u of game.units) {
+    if (u.side === 'enemy') u.hp = 0;
+  }
+  if (game.destroyTargets) {
+    for (const t of game.destroyTargets) t.hp = 0;
+  }
+  updateMissionUI();
+  checkMissionEnd();
 }
 
 function restartMission() {
