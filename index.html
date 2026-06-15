@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>飞虎队：苍穹战棋 - Flying Tigers TBS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Title Screen -->
+  <div id="title-screen" class="overlay screen">
+    <div class="title-card">
+      <h1>飞虎队：苍穹战棋</h1>
+      <h2>Flying Tigers: Sky Tactics</h2>
+      <p class="subtitle">参考《曹操传》与高达战棋 · 历史剧情驱动 · 格纳库养成</p>
+      <div class="title-buttons">
+        <button id="btn-start" class="btn primary">开始新战役</button>
+        <button id="btn-continue" class="btn">读取存档</button>
+      </div>
+      <p class="credit">1941-1943 美国志愿航空队 · 中国 · 缅甸 · 印度</p>
+    </div>
+  </div>
+
+  <!-- Story Screen -->
+  <div id="story-screen" class="overlay screen hidden">
+    <div class="story-card">
+      <h3>剧情</h3>
+      <div id="story-text" class="story-text"></div>
+      <button id="btn-story-next" class="btn primary">下一段</button>
+    </div>
+  </div>
+
+  <!-- Preparation Screen -->
+  <div id="prep-screen" class="overlay screen hidden">
+    <div class="prep-card">
+      <header class="prep-header">
+        <div>
+          <h3>作战整备阶段</h3>
+          <p>任务: <span id="prep-mission">同古训练营</span> · <span id="prep-location">缅甸 同古</span></p>
+        </div>
+        <div class="prep-res">资金: <span id="prep-funds">1500</span>$</div>
+      </header>
+      <nav class="prep-tabs">
+        <button id="btn-prep-hangar" class="prep-tab active">格纳库</button>
+        <button id="btn-prep-pilots" class="prep-tab">驾驶员</button>
+        <button id="btn-prep-briefing" class="prep-tab">任务简报</button>
+      </nav>
+      <div id="prep-content" class="prep-content"></div>
+      <footer class="prep-footer">
+        <button id="btn-prep-start" class="btn primary">出击</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Mission UI -->
+  <div id="mission-ui" class="hidden">
+    <header class="mission-header">
+      <div class="mission-info">
+        <span id="mission-name">任务名</span>
+        <span>回合: <span id="mission-turn">1 / 20</span></span>
+        <span>目标: <span id="mission-objective">全灭敌机</span></span>
+      </div>
+      <div class="mission-actions">
+        <span>资金: <span id="mission-funds">1500</span>$</span>
+        <button id="btn-end-turn" class="btn small">结束回合 (Enter)</button>
+        <button id="btn-menu" class="btn small">菜单</button>
+      </div>
+    </header>
+
+    <aside id="unit-info" class="unit-info">
+      <p>选择一个单位查看详情<br>点击蓝色友机移动/攻击<br>Enter结束回合，Esc取消选择</p>
+    </aside>
+
+    <div id="message-log" class="message-log"></div>
+  </div>
+
+  <!-- Menu Overlay -->
+  <div id="menu-overlay" class="overlay hidden">
+    <div class="menu-card">
+      <h3>菜单</h3>
+      <button id="btn-save" class="btn">保存游戏</button>
+      <button id="btn-load" class="btn">读取存档</button>
+      <button id="btn-restart" class="btn">重新开始</button>
+      <button id="btn-back-title" class="btn">返回标题</button>
+      <button id="btn-close-menu" class="btn primary">继续游戏</button>
+    </div>
+  </div>
+
+  <!-- Victory Screen -->
+  <div id="victory-screen" class="overlay screen hidden">
+    <div class="result-card victory">
+      <h2 id="victory-title">任务完成!</h2>
+      <p id="victory-reward">获得奖励</p>
+      <button id="btn-victory-next" class="btn primary">下一关</button>
+    </div>
+  </div>
+
+  <!-- Defeat Screen -->
+  <div id="defeat-screen" class="overlay screen hidden">
+    <div class="result-card defeat">
+      <h2>任务失败</h2>
+      <p>中队遭受重创，请重新整备后再次出击。</p>
+      <button id="btn-defeat-retry" class="btn">重试本关</button>
+      <button id="btn-defeat-prep" class="btn primary">返回整备</button>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
