@@ -89,11 +89,20 @@ function init() {
   document.getElementById('btn-victory-next').addEventListener('click', onVictoryNext);
   document.getElementById('btn-defeat-retry').addEventListener('click', restartMission);
   document.getElementById('btn-defeat-prep').addEventListener('click', showPrepScreen);
+  document.getElementById('btn-editor').addEventListener('click', openEditor);
+  document.getElementById('btn-close-unit-detail').addEventListener('click', closeUnitDetail);
+  document.getElementById('unit-detail-modal').addEventListener('click', e => {
+    if (e.target.id === 'unit-detail-modal') closeUnitDetail();
+  });
 
   game.canvas.addEventListener('mousemove', handleMouseMove);
   game.canvas.addEventListener('click', handleClick);
+  game.canvas.addEventListener('dblclick', handleDoubleClick);
   game.canvas.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('keydown', handleKey);
+
+  // Editor init
+  initEditor();
 
   game.pilots = createPilots();
   initAircraftStock();
@@ -992,10 +1001,17 @@ function getCellFromMouse(e) {
 }
 
 function handleMouseMove(e) {
-  if (game.state !== 'mission') { game.hoveredCell = null; return; }
+  if (game.state !== 'mission') { game.hoveredCell = null; hideTerrainTooltip(); return; }
   const c = getCellFromMouse(e);
-  if (getCell(c.x, c.y)) game.hoveredCell = c;
-  else game.hoveredCell = null;
+  const cell = getCell(c.x, c.y);
+  if (cell) {
+    game.hoveredCell = c;
+    showTerrainTooltip(e.clientX, e.clientY, cell);
+    updateMissionUI();
+  } else {
+    game.hoveredCell = null;
+    hideTerrainTooltip();
+  }
 }
 
 function handleClick(e) {
@@ -1044,6 +1060,13 @@ function handleClick(e) {
   clearSelection();
 }
 
+function handleDoubleClick(e) {
+  if (game.state !== 'mission') return;
+  const c = getCellFromMouse(e);
+  const u = getUnitAt(c.x, c.y);
+  if (u) openUnitDetail(u);
+}
+
 function clearSelection() {
   game.selectedUnit = null;
   game.moveRange = [];
@@ -1071,6 +1094,11 @@ function movePlayerUnit(unit, tx, ty) {
 }
 
 function handleKey(e) {
+  const modal = document.getElementById('unit-detail-modal');
+  if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+    closeUnitDetail();
+    return;
+  }
   if (game.state === 'mission' && e.key === 'Escape') {
     game.selectedUnit = null;
     game.moveRange = [];
@@ -1332,7 +1360,7 @@ function updateMissionUI() {
       `;
     }
   } else {
-    info.innerHTML = '<p>选择一个单位查看详情<br>点击蓝色友机移动/攻击<br>Enter结束回合，Esc取消选择</p>';
+    info.innerHTML = '<p>选择一个单位查看详情<br>双击任意单位打开详细面板<br>悬浮地形查看加成<br>Enter结束回合，Esc取消选择</p>';
   }
 }
 
@@ -1344,3 +1372,428 @@ function renderMessages() {
 
 // ==================== Start ====================
 window.addEventListener('DOMContentLoaded', init);
+
+// ==================== Terrain Tooltip ====================
+function showTerrainTooltip(cx, cy, cell) {
+  const tip = document.getElementById('terrain-tooltip');
+  if (!tip || !cell) return;
+  tip.innerHTML = `<strong>${cell.name}</strong><span>移动消耗: ${cell.move}</span><span>防御: +${cell.def}%</span><span>回避: ${cell.eva >= 0 ? '+' : ''}${cell.eva}%</span>`;
+  tip.classList.remove('hidden');
+  const pad = 12;
+  let x = cx + pad, y = cy + pad;
+  if (x + tip.offsetWidth > window.innerWidth) x = cx - tip.offsetWidth - pad;
+  if (y + tip.offsetHeight > window.innerHeight) y = cy - tip.offsetHeight - pad;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+function hideTerrainTooltip() {
+  const tip = document.getElementById('terrain-tooltip');
+  if (tip) tip.classList.add('hidden');
+}
+
+// ==================== Unit Detail Modal ====================
+function openUnitDetail(u) {
+  const modal = document.getElementById('unit-detail-modal');
+  const title = document.getElementById('ud-title');
+  const content = document.getElementById('ud-content');
+  if (!modal || !content) return;
+
+  const p = u.pilot;
+  const ac = u.aircraft;
+  const weaponsHtml = u.weapons.map(w =>
+    `<p><strong>${w.name}</strong> (${w.type}) 威力${w.power} 命中${w.hit}% 暴击${w.crit}% 弹药${w.currentAmmo}/${w.ammo}</p>`
+  ).join('');
+  const skillsHtml = (p.skills && p.skills.length)
+    ? p.skills.map(sid => `<span class="stats"><span>${SKILLS[sid].name}</span></span> ${SKILLS[sid].desc}`).join('<br>')
+    : '无';
+
+  title.textContent = `${p.name} "${p.callsign}"`;
+  content.innerHTML = `
+    <h4>${ac.name}</h4>
+    <p>${ac.desc || ''}</p>
+    <div class="stats-row">
+      <div class="stat-box"><div class="label">HP</div><div class="value">${u.hp}/${u.maxHp}</div></div>
+      <div class="stat-box"><div class="label">攻击</div><div class="value">${u.attack}</div></div>
+      <div class="stat-box"><div class="label">防御</div><div class="value">${u.defense}</div></div>
+      <div class="stat-box"><div class="label">技巧</div><div class="value">${u.skill}</div></div>
+      <div class="stat-box"><div class="label">回避</div><div class="value">${Math.floor(u.evasion)}</div></div>
+      <div class="stat-box"><div class="label">移动力</div><div class="value">${u.move}</div></div>
+    </div>
+    <p><strong>等级:</strong> Lv.${p.lv} ${PILOT_CLASSES[p.cls].name} &nbsp;|&nbsp; <strong>士气:</strong> ${p.morale}</p>
+    <p><strong>XP:</strong> ${p.xp}/${p.nextXp}</p>
+    <p>${p.bio || ''}</p>
+    <h4>武器</h4>
+    ${weaponsHtml}
+    <h4>技能</h4>
+    <p>${skillsHtml}</p>
+    <h4>状态</h4>
+    <p>${u.moved ? '已移动' : '未移动'} / ${u.acted ? '已攻击' : '未攻击'}</p>
+  `;
+  modal.classList.remove('hidden');
+}
+
+function closeUnitDetail() {
+  const modal = document.getElementById('unit-detail-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// ==================== Level Editor ====================
+const editor = {
+  canvas: null,
+  ctx: null,
+  map: [],
+  units: [],
+  tool: 'sky',
+  tileSize: 36,
+  width: 14,
+  height: 12,
+  isDrawing: false,
+  lastMouseButton: 0,
+};
+
+function initEditor() {
+  editor.canvas = document.getElementById('editorCanvas');
+  editor.ctx = editor.canvas.getContext('2d');
+
+  document.getElementById('btn-editor-back').addEventListener('click', showTitle);
+  document.getElementById('btn-editor-resize').addEventListener('click', editorResize);
+  document.getElementById('btn-editor-clear').addEventListener('click', editorClear);
+  document.getElementById('btn-editor-save').addEventListener('click', editorSaveJSON);
+  document.getElementById('btn-editor-load').addEventListener('click', () => document.getElementById('editor-file-input').click());
+  document.getElementById('btn-editor-test').addEventListener('click', editorTestPlay);
+  document.getElementById('editor-file-input').addEventListener('change', editorLoadJSON);
+
+  editor.canvas.addEventListener('mousedown', editorMouseDown);
+  editor.canvas.addEventListener('mousemove', editorMouseMove);
+  editor.canvas.addEventListener('mouseup', () => editor.isDrawing = false);
+  editor.canvas.addEventListener('mouseleave', () => editor.isDrawing = false);
+  editor.canvas.addEventListener('contextmenu', e => { e.preventDefault(); editorEraseAtMouse(e); });
+  editor.canvas.addEventListener('dblclick', editorDblClick);
+
+  renderEditorTools();
+  initEditorMap(14, 12);
+}
+
+function openEditor() {
+  hideAllScreens();
+  game.state = 'editor';
+  document.getElementById('editor-screen').classList.remove('hidden');
+  resizeEditorCanvas();
+  renderEditor();
+}
+
+function resizeEditorCanvas() {
+  editor.canvas.width = editor.width * editor.tileSize;
+  editor.canvas.height = editor.height * editor.tileSize;
+}
+
+function initEditorMap(w, h) {
+  editor.width = w;
+  editor.height = h;
+  editor.map = [];
+  for (let y = 0; y < h; y++) {
+    const row = [];
+    for (let x = 0; x < w; x++) {
+      row.push({ x, y, type: 'sky', ...TERRAIN.sky });
+    }
+    editor.map.push(row);
+  }
+  editor.units = [];
+  resizeEditorCanvas();
+}
+
+function renderEditorTools() {
+  const terrainTools = document.getElementById('editor-terrain-tools');
+  const unitTools = document.getElementById('editor-unit-tools');
+  if (!terrainTools || !unitTools) return;
+
+  terrainTools.innerHTML = Object.keys(TERRAIN).map(key => {
+    const t = TERRAIN[key];
+    return `<button class="tool-btn ${editor.tool === key ? 'active' : ''}" data-tool="${key}" data-type="terrain">
+      <span class="swatch" style="background:${t.color}"></span>${t.name}
+    </button>`;
+  }).join('');
+
+  const unitTypes = [
+    { id: 'p40b', name: 'P-40B', side: 'player' },
+    { id: 'ki27', name: '九七战', side: 'enemy' },
+    { id: 'ki43', name: '一式战', side: 'enemy' },
+    { id: 'zero', name: '零式', side: 'enemy' },
+    { id: 'ki21', name: '九七重爆', side: 'enemy' },
+    { id: 'ki48', name: '九九轻爆', side: 'enemy' },
+  ];
+  unitTools.innerHTML = unitTypes.map(u => {
+    return `<button class="tool-btn ${editor.tool === u.id ? 'active' : ''}" data-tool="${u.id}" data-type="unit" data-side="${u.side}">
+      ${u.name}
+    </button>`;
+  }).join('');
+
+  terrainTools.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => setEditorTool(btn.dataset.tool));
+  });
+  unitTools.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => setEditorTool(btn.dataset.tool, btn.dataset.side));
+  });
+}
+
+function setEditorTool(tool, side) {
+  editor.tool = tool;
+  editor.toolSide = side || null;
+  renderEditorTools();
+}
+
+function editorCellFromMouse(e) {
+  const rect = editor.canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const x = Math.floor(mx / editor.tileSize);
+  const y = Math.floor(my / editor.tileSize);
+  return { x, y };
+}
+
+function editorMouseDown(e) {
+  editor.isDrawing = true;
+  editor.lastMouseButton = e.button;
+  if (e.button === 2) editorEraseAtMouse(e);
+  else editorApplyAtMouse(e);
+}
+
+function editorMouseMove(e) {
+  if (!editor.isDrawing) return;
+  if (editor.lastMouseButton === 2) editorEraseAtMouse(e);
+  else editorApplyAtMouse(e);
+}
+
+function editorApplyAtMouse(e) {
+  const c = editorCellFromMouse(e);
+  editorApplyBrush(c.x, c.y);
+}
+
+function editorEraseAtMouse(e) {
+  const c = editorCellFromMouse(e);
+  editorErase(c.x, c.y);
+}
+
+function editorApplyBrush(x, y) {
+  if (x < 0 || x >= editor.width || y < 0 || y >= editor.height) return;
+  const tool = editor.tool;
+  if (TERRAIN[tool]) {
+    editor.map[y][x] = { x, y, type: tool, ...TERRAIN[tool] };
+  } else if (editor.toolSide) {
+    // Place unit if cell is empty
+    if (!editor.units.some(u => u.x === x && u.y === y)) {
+      editor.units.push({ x, y, type: tool, side: editor.toolSide, lv: 1 });
+    }
+  }
+  renderEditor();
+}
+
+function editorErase(x, y) {
+  if (x < 0 || x >= editor.width || y < 0 || y >= editor.height) return;
+  editor.units = editor.units.filter(u => !(u.x === x && u.y === y));
+  editor.map[y][x] = { x, y, type: 'sky', ...TERRAIN.sky };
+  renderEditor();
+}
+
+function editorDblClick(e) {
+  const c = editorCellFromMouse(e);
+  const u = editor.units.find(u => u.x === c.x && u.y === c.y);
+  if (!u) return;
+  // Simple unit edit dialog
+  const lv = prompt(`设置 ${u.type} 的等级 (1-10):`, u.lv);
+  if (lv !== null) {
+    const n = parseInt(lv, 10);
+    if (!isNaN(n) && n >= 1 && n <= 10) u.lv = n;
+  }
+  renderEditor();
+}
+
+function editorResize() {
+  const w = parseInt(document.getElementById('editor-width').value, 10);
+  const h = parseInt(document.getElementById('editor-height').value, 10);
+  if (!w || !h || w < 8 || h < 8 || w > 30 || h > 24) {
+    alert('尺寸范围为 8~30 宽，8~24 高');
+    return;
+  }
+  // Preserve existing map center
+  const newMap = [];
+  for (let y = 0; y < h; y++) {
+    const row = [];
+    for (let x = 0; x < w; x++) {
+      if (y < editor.height && x < editor.width) row.push(editor.map[y][x]);
+      else row.push({ x, y, type: 'sky', ...TERRAIN.sky });
+    }
+    newMap.push(row);
+  }
+  editor.map = newMap;
+  editor.units = editor.units.filter(u => u.x < w && u.y < h);
+  editor.width = w;
+  editor.height = h;
+  resizeEditorCanvas();
+  renderEditor();
+}
+
+function editorClear() {
+  if (!confirm('确定要清空整个地图吗？')) return;
+  initEditorMap(editor.width, editor.height);
+  renderEditor();
+}
+
+function editorSaveJSON() {
+  const data = {
+    width: editor.width,
+    height: editor.height,
+    map: editor.map.map(row => row.map(c => c.type)),
+    units: editor.units,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'flyingtigers_map.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function editorLoadJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      editor.width = data.width || 14;
+      editor.height = data.height || 12;
+      editor.map = [];
+      for (let y = 0; y < editor.height; y++) {
+        const row = [];
+        for (let x = 0; x < editor.width; x++) {
+          const type = (data.map && data.map[y] && data.map[y][x]) || 'sky';
+          row.push({ x, y, type, ...TERRAIN[type] });
+        }
+        editor.map.push(row);
+      }
+      editor.units = data.units || [];
+      document.getElementById('editor-width').value = editor.width;
+      document.getElementById('editor-height').value = editor.height;
+      resizeEditorCanvas();
+      renderEditor();
+    } catch (err) {
+      alert('地图文件解析失败');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function editorTestPlay() {
+  // Convert editor data into a custom mission
+  const playerSpawns = editor.units.filter(u => u.side === 'player').map(u => ({ x: u.x, y: u.y }));
+  const enemies = editor.units.filter(u => u.side === 'enemy').map(u => ({ type: u.type, x: u.x, y: u.y, lv: u.lv }));
+
+  if (playerSpawns.length === 0) {
+    alert('至少需要放置一架友方战机');
+    return;
+  }
+
+  const customMission = {
+    id: 'custom',
+    name: '自定义关卡',
+    location: '编辑器测试',
+    intro: ['这是从关卡编辑器导入的自定义地图。'],
+    objective: 'defeat_all',
+    turns: 30,
+    reward: { xp: 100, funds: 500 },
+    mapWidth: editor.width,
+    mapHeight: editor.height,
+    terrainSeed: 'custom',
+    enemies,
+    playerSpawns,
+    allowedUnits: playerSpawns.length,
+  };
+
+  game.currentMission = customMission;
+  generateMapFromEditor();
+  game.units = [];
+  game.turn = 'player';
+  game.turnCount = 1;
+  game.selectedUnit = null;
+  game.moveRange = [];
+  game.attackRange = [];
+  game.messageLog = [];
+  game.protectTarget = null;
+  game.destroyTargets = [];
+
+  for (let i = 0; i < game.pilots.length && i < playerSpawns.length; i++) {
+    const pilot = clonePilot(game.pilots[i]);
+    const spawn = playerSpawns[i];
+    game.units.push(createPlayerUnit(pilot, spawn.x, spawn.y));
+  }
+  for (const e of enemies) {
+    game.units.push(createEnemyUnit(e.type, e.x, e.y, e.lv));
+  }
+
+  hideAllScreens();
+  game.state = 'mission';
+  document.getElementById('mission-ui').classList.remove('hidden');
+  addMessage('自定义关卡开始');
+  updateMissionUI();
+}
+
+function generateMapFromEditor() {
+  game.map = [];
+  for (let y = 0; y < editor.height; y++) {
+    const row = [];
+    for (let x = 0; x < editor.width; x++) {
+      const cell = editor.map[y][x];
+      row.push({ x, y, type: cell.type, ...TERRAIN[cell.type] });
+    }
+    game.map.push(row);
+  }
+}
+
+function renderEditor() {
+  const ctx = editor.ctx;
+  ctx.clearRect(0, 0, editor.canvas.width, editor.canvas.height);
+
+  for (const row of editor.map) {
+    for (const cell of row) {
+      const x = cell.x * editor.tileSize;
+      const y = cell.y * editor.tileSize;
+      ctx.fillStyle = cell.color;
+      ctx.fillRect(x, y, editor.tileSize, editor.tileSize);
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.strokeRect(x, y, editor.tileSize, editor.tileSize);
+      if (cell.symbol) {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(cell.symbol, x + editor.tileSize/2, y + editor.tileSize/2 + 4);
+      }
+    }
+  }
+
+  for (const u of editor.units) {
+    const x = u.x * editor.tileSize;
+    const y = u.y * editor.tileSize;
+    const cx = x + editor.tileSize / 2;
+    const cy = y + editor.tileSize / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    if (u.side === 'enemy') ctx.scale(-1, 1);
+    ctx.fillStyle = u.side === 'player' ? '#4682B4' : '#B22222';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 10, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = u.side === 'player' ? '#87CEFA' : '#CD5C5C';
+    ctx.fillRect(-10, -3, 20, 6);
+    ctx.restore();
+    ctx.fillStyle = '#000';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Lv' + u.lv, cx, y + editor.tileSize - 2);
+  }
+}

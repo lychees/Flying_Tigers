@@ -311,3 +311,151 @@ html, body {
 .result-card h2 { margin-top: 0; }
 .result-card.victory h2 { color: #00ff00; }
 .result-card.defeat h2 { color: #ff4444; }
+
+/* Terrain Tooltip */
+.terrain-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(10, 15, 30, 0.95);
+  border: 1px solid #d4af37;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  max-width: 180px;
+}
+.terrain-tooltip strong { color: #FFD700; display: block; margin-bottom: 4px; }
+.terrain-tooltip span { color: #ccc; display: block; }
+
+/* Unit Detail Modal */
+#unit-detail-modal .overlay { z-index: 250; }
+.unit-detail-card {
+  background: rgba(15, 20, 30, 0.98);
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  padding: 25px;
+  width: 480px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.unit-detail-card h3 { margin-top: 0; color: #FFD700; }
+.unit-detail-card h4 { color: #d4af37; margin: 16px 0 6px; }
+.unit-detail-card p { margin: 5px 0; line-height: 1.6; }
+.unit-detail-card .stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+.unit-detail-card .stat-box {
+  background: #252525;
+  padding: 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+.unit-detail-card .stat-box .label { font-size: 11px; color: #aaa; }
+.unit-detail-card .stat-box .value { font-size: 16px; color: #fff; }
+
+/* Level Editor */
+.editor-card {
+  width: 95vw;
+  height: 92vh;
+  background: rgba(10, 15, 30, 0.98);
+  border: 2px solid #8B7355;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #444;
+}
+.editor-header h3 { margin: 0; color: #d4af37; }
+.editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.editor-tools {
+  width: 260px;
+  padding: 15px;
+  border-right: 1px solid #444;
+  overflow-y: auto;
+}
+.editor-tools h4 { margin: 12px 0 8px; color: #FFD700; font-size: 14px; }
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.tool-btn {
+  padding: 8px 4px;
+  background: #252525;
+  border: 1px solid #555;
+  color: #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: center;
+}
+.tool-btn:hover { border-color: #d4af37; }
+.tool-btn.active {
+  border-color: #FFD700;
+  background: #3a3200;
+}
+.tool-btn .swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.editor-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.editor-actions label {
+  color: #ccc;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.editor-actions input[type="number"] {
+  width: 60px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 4px;
+  border-radius: 3px;
+}
+.editor-canvas-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: auto;
+  background: #050505;
+}
+#editorCanvas {
+  background: #87CEEB;
+  cursor: crosshair;
+}
+.editor-hint {
+  position: absolute;
+  bottom: 10px;
+  color: #aaa;
+  font-size: 12px;
+  background: rgba(0,0,0,0.6);
+  padding: 6px 12px;
+  border-radius: 4px;
+}

@@ -18,6 +18,7 @@
       <div class="title-buttons">
         <button id="btn-start" class="btn primary">开始新战役</button>
         <button id="btn-continue" class="btn">读取存档</button>
+        <button id="btn-editor" class="btn">关卡编辑器</button>
       </div>
       <p class="credit">1941-1943 美国志愿航空队 · 中国 · 缅甸 · 印度</p>
     </div>
@@ -71,7 +72,7 @@
     </header>
 
     <aside id="unit-info" class="unit-info">
-      <p>选择一个单位查看详情<br>点击蓝色友机移动/攻击<br>Enter结束回合，Esc取消选择</p>
+      <p>选择一个单位查看详情<br>点击蓝色友机移动/攻击<br>双击任意单位打开详情<br>悬浮地形查看加成<br>Enter结束回合，Esc取消选择</p>
     </aside>
 
     <div id="message-log" class="message-log"></div>
@@ -105,6 +106,53 @@
       <p>中队遭受重创，请重新整备后再次出击。</p>
       <button id="btn-defeat-retry" class="btn">重试本关</button>
       <button id="btn-defeat-prep" class="btn primary">返回整备</button>
+    </div>
+  </div>
+
+  <!-- Unit Detail Modal -->
+  <div id="unit-detail-modal" class="overlay hidden">
+    <div class="unit-detail-card">
+      <h3 id="ud-title">单位详情</h3>
+      <div id="ud-content"></div>
+      <button id="btn-close-unit-detail" class="btn primary">关闭</button>
+    </div>
+  </div>
+
+  <!-- Terrain Tooltip -->
+  <div id="terrain-tooltip" class="terrain-tooltip hidden"></div>
+
+  <!-- Level Editor Screen -->
+  <div id="editor-screen" class="overlay screen hidden">
+    <div class="editor-card">
+      <header class="editor-header">
+        <h3>关卡编辑器</h3>
+        <div>
+          <button id="btn-editor-back" class="btn small">返回标题</button>
+        </div>
+      </header>
+      <div class="editor-body">
+        <aside class="editor-tools">
+          <h4>地形笔刷</h4>
+          <div id="editor-terrain-tools" class="tool-grid"></div>
+          <h4>单位放置</h4>
+          <div id="editor-unit-tools" class="tool-grid"></div>
+          <h4>操作</h4>
+          <div class="editor-actions">
+            <label>宽: <input id="editor-width" type="number" value="14" min="8" max="30"></label>
+            <label>高: <input id="editor-height" type="number" value="12" min="8" max="24"></label>
+            <button id="btn-editor-resize" class="btn small">调整尺寸</button>
+            <button id="btn-editor-clear" class="btn small danger">清空地图</button>
+            <button id="btn-editor-save" class="btn small primary">导出地图 JSON</button>
+            <button id="btn-editor-load" class="btn small">导入地图 JSON</button>
+            <button id="btn-editor-test" class="btn small primary">测试游玩</button>
+          </div>
+          <input type="file" id="editor-file-input" accept=".json" class="hidden">
+        </aside>
+        <div class="editor-canvas-wrap">
+          <canvas id="editorCanvas"></canvas>
+          <p class="editor-hint">左键绘制/放置 · 右键擦除 · 双击单位打开详情</p>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -5,3 +5,4 @@ Thumbs.db
 node_modules/
 session_*.zip
 *.zip
+kimi-export-session_*.md
